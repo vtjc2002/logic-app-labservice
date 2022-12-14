@@ -1,0 +1,71 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Response": {
+                "type": "Response",
+                "kind": "http",
+                "inputs": {
+                    "statusCode": 200,
+                    "headers": {
+                        "content-type": "application/json"
+                    },
+                    "body": "@outputs('Compose')"
+                },
+                "runAfter": {
+                    "Compose": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Get_rows": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "tableName": "[dbo].[lab]",
+                        "columnValuesForWhereCondition": {
+                            "id": "@triggerOutputs()['relativePathParameters']['id']"
+                        }
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "getRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                    }
+                },
+                "runAfter": {}
+            },
+            "Compose": {
+                "type": "Compose",
+                "inputs": "@body('Get_rows')?[0]",
+                "runAfter": {
+                    "Get_rows": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "method": "GET",
+                    "relativePath": "/lab/{id}"
+                },
+                "operationOptions": "SuppressWorkflowHeadersOnResponse"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateless"
+}

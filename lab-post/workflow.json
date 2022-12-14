@@ -1,0 +1,71 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Response": {
+                "type": "Response",
+                "kind": "http",
+                "inputs": {
+                    "statusCode": 200,
+                    "headers": {
+                        "content-type": "application/json"
+                    },
+                    "body": "@outputs('Compose')"
+                },
+                "runAfter": {
+                    "Compose": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Insert_row": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "tableName": "[dbo].[lab]",
+                        "setColumns": {
+                            "location": "@triggerBody()?['location']"
+                        }
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "insertRow",
+                        "serviceProviderId": "/serviceProviders/sql"
+                    }
+                },
+                "runAfter": {}
+            },
+            "Compose": {
+                "type": "Compose",
+                "inputs": "@body('Insert_row')",
+                "runAfter": {
+                    "Insert_row": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "method": "POST",
+                    "relativePath": "/lab/"
+                },
+                "operationOptions": "SuppressWorkflowHeadersOnResponse"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateless"
+}
