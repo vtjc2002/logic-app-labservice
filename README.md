@@ -1,2 +1,2 @@
-# logice-app-labservice
+# logic-app-labservice
 Logic App Lab Service
